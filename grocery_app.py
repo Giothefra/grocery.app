@@ -3,6 +3,9 @@ from datetime import datetime, timedelta
 from collections import defaultdict
 import matplotlib.pyplot as plt
 
+# --- Constants ---
+longer_lasting_items = ["frozen meat", "cheese", "vacuum-sealed", "hard cheese"]
+
 # --- Core Classes ---
 
 class GroceryItem:
@@ -13,19 +16,36 @@ class GroceryItem:
         self.bought = False
         self.added_on = datetime.now()
         self.expiry_date = expiry_date
+        self.opened_date = None
 
     def mark_as_bought(self):
         self.bought = True
+
+    def mark_as_opened(self):
+        self.opened_date = datetime.now()
 
     def is_expiring_soon(self, days=3):
         if self.expiry_date is None:
             return False
         return (self.expiry_date - datetime.now()).days <= days
 
+    def opened_expiry_date(self):
+        if not self.opened_date:
+            return None
+        shelf_life = 7 if any(item in self.name.lower() for item in longer_lasting_items) else 3
+        return self.opened_date + timedelta(days=shelf_life)
+
+    def days_until_opened_expiry(self):
+        exp = self.opened_expiry_date()
+        if not exp:
+            return None
+        return (exp - datetime.now()).days
+
     def __repr__(self):
         status = '✅ Bought' if self.bought else '🕒 Pending'
         expiry = self.expiry_date.strftime("%Y-%m-%d") if self.expiry_date else "N/A"
-        return f"{self.name} ({self.category}) - {status} | ${self.price:.2f} | Expiry: {expiry}"
+        opened = self.opened_date.strftime("%Y-%m-%d") if self.opened_date else "Not opened"
+        return f"{self.name} ({self.category}) - {status} | ${self.price:.2f} | Expiry: {expiry} | Opened: {opened}"
 
 class GroceryList:
     def __init__(self):
@@ -42,6 +62,13 @@ class GroceryList:
                 return item
         return None
 
+    def mark_as_opened(self, name):
+        for item in self.items:
+            if item.name.lower() == name.lower() and item.bought and not item.opened_date:
+                item.mark_as_opened()
+                return item
+        return None
+
     def get_items(self, bought=None):
         if bought is None:
             return self.items
@@ -49,6 +76,14 @@ class GroceryList:
 
     def get_expiring_items(self, days=3):
         return [item for item in self.items if not item.bought and item.is_expiring_soon(days)]
+
+    def get_opened_items_expiring_tomorrow(self):
+        alert_list = []
+        for item in self.items:
+            days = item.days_until_opened_expiry()
+            if days == 1:
+                alert_list.append(item)
+        return alert_list
 
 class PurchaseHistory:
     def __init__(self):
@@ -79,23 +114,36 @@ class PurchaseHistory:
 st.set_page_config(page_title="Grocery Tracker", layout="centered")
 st.title("🛒 Grocery Manager & Inventory Tracker")
 
-if 'grocery_list' not in st.session_state:
+# Safe session state setup
+if 'grocery_list' not in st.session_state or not isinstance(st.session_state.grocery_list, GroceryList):
     st.session_state.grocery_list = GroceryList()
 
-if 'purchase_history' not in st.session_state:
+if 'purchase_history' not in st.session_state or not isinstance(st.session_state.purchase_history, PurchaseHistory):
     st.session_state.purchase_history = PurchaseHistory()
 
+# --- Sidebar: Add Item ---
 with st.sidebar:
     st.header("➕ Add Grocery Item")
+
     name = st.text_input("Item name")
     category = st.text_input("Category")
     price = st.number_input("Price", min_value=0.0, step=0.1)
-    expiry = st.date_input("Expiry date (optional)", value=None)
+    expiry = st.date_input("Expiry date", value=datetime.today())
+    no_expiry = st.checkbox("No expiry date")
+
     if st.button("Add Item"):
-        expiry_dt = datetime.combine(expiry, datetime.min.time()) if expiry else None
+        expiry_dt = None if no_expiry else datetime.combine(expiry, datetime.min.time())
         st.session_state.grocery_list.add_item(name, category, price, expiry_dt)
         st.success(f"Added item: {name}")
 
+# --- Opened Food Expiry Alerts ---
+alerts = st.session_state.grocery_list.get_opened_items_expiring_tomorrow()
+if alerts:
+    st.warning("⚠️ The following opened items will expire tomorrow:")
+    for item in alerts:
+        st.write(f"🔔 {item.name} (Opened on {item.opened_date.strftime('%Y-%m-%d')})")
+
+# --- Pending Items ---
 st.subheader("📦 Pending Items")
 for item in st.session_state.grocery_list.get_items(bought=False):
     if st.button(f"✅ Mark as Bought: {item.name}", key=f"buy_{item.name}"):
@@ -107,10 +155,21 @@ for item in st.session_state.grocery_list.get_items(bought=False):
 if not st.session_state.grocery_list.get_items(bought=False):
     st.write("🎉 No pending items!")
 
-st.subheader("✅ Bought Items")
+# --- Bought Items (Openable) ---
+st.subheader("✅ Bought Items (Click to mark as opened)")
 for item in st.session_state.grocery_list.get_items(bought=True):
-    st.write("-", item)
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        st.write(f"- {item}")
+    with col2:
+        if not item.opened_date:
+            with st.form(key=f"form_open_{item.name}"):
+                submit = st.form_submit_button("📤 Open")
+                if submit:
+                    st.session_state.grocery_list.mark_as_opened(item.name)
+                    st.rerun()
 
+# --- Expiring Soon ---
 st.subheader("⏰ Expiring Soon (within 3 days)")
 expiring = st.session_state.grocery_list.get_expiring_items()
 if expiring:
@@ -119,8 +178,13 @@ if expiring:
 else:
     st.write("✅ No items expiring soon!")
 
+# --- Money and Stats ---
 st.subheader("💰 Money Spent")
 st.write(f"Total spent: ${st.session_state.purchase_history.total_spent:.2f}")
 
+# Optional debug: view raw purchase history
+st.write("📅 Purchase History Raw:", dict(st.session_state.purchase_history.history))
+
+# --- Purchase Chart ---
 st.subheader("📊 Purchase Chart")
 st.session_state.purchase_history.display_chart()
