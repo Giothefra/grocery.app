@@ -114,6 +114,10 @@ class PurchaseHistory:
 # --- Streamlit App ---
 
 st.set_page_config(page_title="Grocery Tracker", layout="centered")
+
+if 'grocery_list' not in st.session_state or not isinstance(st.session_state.grocery_list, GroceryList):
+    st.session_state.grocery_list = GroceryList()
+
 st.title("🛒 Grocery Manager & Inventory Tracker")
 
 if 'grocery_list' not in st.session_state:
@@ -132,7 +136,8 @@ no_expiry = st.checkbox("No expiry date")
 
 if st.button("Add Item"):
     expiry_dt = None if no_expiry else datetime.combine(expiry, datetime.min.time())
-    st.session_state.grocery_list.add_item(name, category, price, expiry_dt)
+    st.write("Type of grocery_list:", type(st.session_state.grocery_list))
+alerts = st.session_state.grocery_list.get_opened_items_expiring_tomorrow()
     st.success(f"Added item: {name}")
 
 
