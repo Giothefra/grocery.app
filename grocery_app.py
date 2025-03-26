@@ -145,22 +145,3 @@ pip install streamlit
 # st.session_state.purchase_history.display_chart()
 #
 
-!ngrok config add-authtoken 2uoTCCqowBN1hTuyairJlvvLAEn_3C5fHWV9aZvBR2v3ic4FE
-
-from pyngrok import ngrok
-import threading
-import os
-import time
-
-ngrok.kill()
-
-def run_app():
-    os.system("streamlit run grocery_app.py")
-
-thread = threading.Thread(target=run_app)
-thread.start()
-
-time.sleep(5)
-
-public_url = ngrok.connect(8501)
-print(f"✅ App running at: {public_url}")
