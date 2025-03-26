@@ -86,6 +86,7 @@ class GroceryList:
                 alert_list.append(item)
         return alert_list
 
+
 class PurchaseHistory:
     def __init__(self):
         self.history = defaultdict(list)
