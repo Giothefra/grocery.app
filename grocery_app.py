@@ -128,18 +128,17 @@ if 'purchase_history' not in st.session_state:
 
 with st.sidebar:
     st.header("➕ Add Grocery Item")
+
     name = st.text_input("Item name")
     category = st.text_input("Category")
     price = st.number_input("Price", min_value=0.0, step=0.1)
-expiry = st.date_input("Expiry date", value=datetime.today())
-no_expiry = st.checkbox("No expiry date")
+    expiry = st.date_input("Expiry date", value=datetime.today())
+    no_expiry = st.checkbox("No expiry date")
 
-if st.button("Add Item"):
-    expiry_dt = None if no_expiry else datetime.combine(expiry, datetime.min.time())
-    st.write("Type of grocery_list:", type(st.session_state.grocery_list))
-alerts = st.session_state.grocery_list.get_opened_items_expiring_tomorrow()
-    st.success(f"Added item: {name}")
-
+    if st.button("Add Item"):
+        expiry_dt = None if no_expiry else datetime.combine(expiry, datetime.min.time())
+        st.session_state.grocery_list.add_item(name, category, price, expiry_dt)
+        st.success(f"Added item: {name}")
 
 # --- Opened Food Expiry Alerts ---
 alerts = st.session_state.grocery_list.get_opened_items_expiring_tomorrow()
