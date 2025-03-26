@@ -127,11 +127,14 @@ with st.sidebar:
     name = st.text_input("Item name")
     category = st.text_input("Category")
     price = st.number_input("Price", min_value=0.0, step=0.1)
-    expiry = st.date_input("Expiry date (optional)", value=None)
-    if st.button("Add Item"):
-        expiry_dt = datetime.combine(expiry, datetime.min.time()) if expiry else None
-        st.session_state.grocery_list.add_item(name, category, price, expiry_dt)
-        st.success(f"Added item: {name}")
+expiry = st.date_input("Expiry date", value=datetime.today())
+no_expiry = st.checkbox("No expiry date")
+
+if st.button("Add Item"):
+    expiry_dt = None if no_expiry else datetime.combine(expiry, datetime.min.time())
+    st.session_state.grocery_list.add_item(name, category, price, expiry_dt)
+    st.success(f"Added item: {name}")
+
 
 # --- Opened Food Expiry Alerts ---
 alerts = st.session_state.grocery_list.get_opened_items_expiring_tomorrow()
