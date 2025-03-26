@@ -77,7 +77,7 @@ class GroceryList:
 
     def get_expiring_items(self, days=3):
         return [item for item in self.items if not item.bought and item.is_expiring_soon(days)]
-
+        
     def get_opened_items_expiring_tomorrow(self):
         alert_list = []
         for item in self.items:
