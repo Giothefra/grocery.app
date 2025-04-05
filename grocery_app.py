@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from collections import defaultdict
 import matplotlib.pyplot as plt
 
-# --- Object-Oriented Core Classes --- #
+# --- Core Classes with Inheritance and Encapsulation --- #
 
 class BaseItem:
     def __init__(self, name, category):
@@ -70,8 +70,11 @@ class GroceryList:
             return self.__items
         return [item for item in self.__items if item.is_bought() == bought]
 
-    def get_expiring_items(self, days=3):
-        return [item for item in self.__items if not item.is_bought() and item.is_expiring_soon(days)]
+    def get_expiring_items(self, days=3, include_bought=True):
+        return [
+            item for item in self.__items
+            if item.is_expiring_soon(days) and (include_bought or not item.is_bought())
+        ]
 
 
 class PurchaseHistory:
@@ -101,18 +104,19 @@ class PurchaseHistory:
         plt.xticks(rotation=45)
         st.pyplot(fig)
 
-# --- Streamlit UI --- #
+# --- Streamlit App UI --- #
 
 st.set_page_config(page_title="Grocery Tracker", layout="centered")
 st.title("🛒 Grocery Manager & Inventory Tracker")
 
+# Session state
 if 'grocery_list' not in st.session_state:
     st.session_state.grocery_list = GroceryList()
 
 if 'purchase_history' not in st.session_state:
     st.session_state.purchase_history = PurchaseHistory()
 
-# Sidebar form
+# Sidebar to add new items
 with st.sidebar:
     st.header("➕ Add Grocery Item")
     name = st.text_input("Item name")
@@ -124,7 +128,7 @@ with st.sidebar:
         st.session_state.grocery_list.add_item(name, category, price, expiry_dt)
         st.success(f"Added item: {name}")
 
-# Pending items section with a while loop
+# Pending items section using while loop
 st.subheader("📦 Pending Items")
 pending_items = st.session_state.grocery_list.get_items(bought=False)
 i = 0
@@ -140,7 +144,7 @@ while i < len(pending_items):
 if not pending_items:
     st.write("🎉 No pending items!")
 
-# Bought items
+# Bought items section
 st.subheader("✅ Bought Items")
 bought_items = st.session_state.grocery_list.get_items(bought=True)
 if bought_items:
@@ -149,24 +153,25 @@ if bought_items:
 else:
     st.info("No items bought yet.")
 
-# Expiring soon items
+# Expiring soon (now includes bought items too)
 st.subheader("⏰ Expiring Soon (within 3 days)")
-expiring_items = st.session_state.grocery_list.get_expiring_items()
+expiring_items = st.session_state.grocery_list.get_expiring_items(include_bought=True)
 if expiring_items:
     for item in expiring_items:
         days_left = (item.get_expiry_date() - datetime.now()).days
+        label = f"{item} (Already bought)" if item.is_bought() else str(item)
         if days_left < 0:
-            st.error(f"❌ Expired: {item}")
+            st.error(f"❌ Expired: {label}")
         elif days_left == 0:
-            st.warning(f"⚠️ Expires today: {item}")
+            st.warning(f"⚠️ Expires today: {label}")
         elif days_left == 1:
-            st.warning(f"⚠️ Expires tomorrow: {item}")
+            st.warning(f"⚠️ Expires tomorrow: {label}")
         else:
-            st.info(f"📅 Expires in {days_left} days: {item}")
+            st.info(f"📅 Expires in {days_left} days: {label}")
 else:
     st.success("✅ No items expiring soon!")
 
-# Spending summary
+# Total spending section
 st.subheader("💰 Money Spent")
 total = st.session_state.purchase_history.get_total_spent()
 if total > 0:
@@ -176,6 +181,6 @@ elif total == 0:
 else:
     st.warning("⚠️ Spending total seems off.")
 
-# Chart
+# Purchase chart
 st.subheader("📊 Purchase Chart")
 st.session_state.purchase_history.display_chart()
