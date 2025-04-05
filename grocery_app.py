@@ -90,19 +90,6 @@ class PurchaseHistory:
     def get_total_spent(self):
         return self.__total_spent
 
-    def display_chart(self):
-        if not self.__history:
-            st.write("No purchase data yet.")
-            return
-        dates = sorted(self.__history.keys())
-        counts = [len(self.__history[date]) for date in dates]
-        fig, ax = plt.subplots()
-        ax.bar(dates, counts)
-        ax.set_title("Items Bought Per Day")
-        ax.set_xlabel("Date")
-        ax.set_ylabel("Count")
-        plt.xticks(rotation=45)
-        st.pyplot(fig)
 
 # --- Streamlit App UI --- #
 
@@ -180,7 +167,3 @@ elif total == 0:
     st.write("You haven't spent anything yet.")
 else:
     st.warning("⚠️ Spending total seems off.")
-
-# Purchase chart
-st.subheader("📊 Purchase Chart")
-st.session_state.purchase_history.display_chart()
