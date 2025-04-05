@@ -46,7 +46,8 @@ class GroceryItem(BaseItem):
     def is_expiring_soon(self, days=3):
         if self.__expiry_date is None:
             return False  # If there's no expiry date, it can't expire.
-        return 0 <= (self.__expiry_date - datetime.now()).days <= days
+        # ✅ Fix: compare only the date part to avoid time mismatch
+        return 0 <= (self.__expiry_date.date() - datetime.now().date()).days <= days
 
     # Getter for price
     def get_price(self):
@@ -169,7 +170,8 @@ st.subheader("⏰ Expiring Soon (within 3 days)")
 expiring_items = st.session_state.grocery_list.get_expiring_items(include_bought=True)
 if expiring_items:
     for item in expiring_items:
-        days_left = (item.get_expiry_date() - datetime.now()).days
+        # ✅ Fix: compare date only
+        days_left = (item.get_expiry_date().date() - datetime.now().date()).days
         label = f"{item} (Already bought)" if item.is_bought() else str(item)
 
         # Show different messages based on days left
