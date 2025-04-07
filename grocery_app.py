@@ -27,7 +27,7 @@ class BaseItem:
 # GroceryItem class inherits from BaseItem and adds price, bought status, and expiry info.
 class GroceryItem(BaseItem):
     def __init__(self, name, category, price=0.0, expiry_date=None):
-        super().__init__(name, category)  # Call the parent constructor.
+        super().__init__(name, category)  # super() calls the constructor (__init__) of the parent class (BaseItem) to set the common attributes 'name' and 'category'.
         self.__price = price  # Private attribute for price.
         self.__bought = False  # Private attribute to track if item is bought.
         self.__added_on = datetime.now()  # Store the time the item was added.
@@ -45,7 +45,7 @@ class GroceryItem(BaseItem):
     def is_expiring_soon(self, days=3):
         if self.__expiry_date is None:
             return False  # If there's no expiry date, it can't expire.
-        # ✅ Fix: compare only the date part to avoid time mismatch
+
         return 0 <= (self.__expiry_date.date() - datetime.now().date()).days <= days
 
     # Getter for price
