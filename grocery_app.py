@@ -7,7 +7,6 @@ from datetime import datetime, timedelta  # Used for dates, times, and checking 
 from collections import defaultdict  # A special dictionary from the collections module.
 import matplotlib.pyplot as plt  # Imported for plotting (not used in this version).
 
-# ------------------- CLASS DEFINITIONS ------------------- #
 
 # BaseItem class holds shared attributes for items (name and category).
 class BaseItem:
