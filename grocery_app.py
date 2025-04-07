@@ -109,7 +109,7 @@ class PurchaseHistory:
     def get_total_spent(self):
         return self.__total_spent
 
-# ------------------- STREAMLIT APP LOGIC ------------------- #
+
 
 # Set page title and layout.
 st.set_page_config(page_title="Grocery Tracker", layout="centered")
@@ -169,7 +169,6 @@ st.subheader("⏰ Expiring Soon (within 3 days)")
 expiring_items = st.session_state.grocery_list.get_expiring_items(include_bought=True)
 if expiring_items:
     for item in expiring_items:
-        # ✅ Fix: compare date only
         days_left = (item.get_expiry_date().date() - datetime.now().date()).days
         label = f"{item} (Already bought)" if item.is_bought() else str(item)
 
