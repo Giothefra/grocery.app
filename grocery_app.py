@@ -15,12 +15,12 @@ class BaseItem:
         self.__category = category  # Private attribute for the item's category.
 
     # Getter for name
-    @property   #@property decorator helps you access private attributes safely.
+    @property   # @property decorator helps you access private attributes safely.
     def name(self):
         return self.__name
 
     # Getter for category
-    @property   #@property decorator helps you access private attributes safely.
+    @property   # @property decorator helps you access private attributes safely.
     def category(self):
         return self.__category
 
